@@ -1,5 +1,5 @@
 require 'rspec'
-require_relative '../lib/pattern_matching'
+require_relative '../lib/RubyPatternMatching'
 
 describe 'PatternMatching' do
 
