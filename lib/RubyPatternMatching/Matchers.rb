@@ -111,14 +111,46 @@ class BasicMatcher
   end
 end
 
-class Symbol
+module BindingMatcher
   include Matcher
-
-  def call(_obj)
-    true
+  def call(obj)
+    call_condition(obj)
   end
 
   def do_bindings(obj, pttrn_mtc)
-    pttrn_mtc.define_singleton_method(self) { obj }
+    pttrn_mtc.define_singleton_method(name) { obj }
+  end
+end
+
+class Symbol
+  include BindingMatcher
+
+  def call_condition(_obj)
+    true
+  end
+
+  def name
+    self
+  end
+
+  def if (&condition)
+    new IfMatcher(self, &condition)
+  end
+end
+
+class IfMatcher
+  include BindingMatcher
+
+  def initialize(name, &condition)
+    @name = name
+    @condition = condition
+  end
+
+  def call_condition(obj)
+    @condition.call(obj)
+  end
+
+  def name
+    @name
   end
 end
