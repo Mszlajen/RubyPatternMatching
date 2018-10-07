@@ -10,21 +10,19 @@ end
 class PatternNotFound < Exception
 end
 
-class Object
-  def matches?(obj, &b)
-    begin
-      PatternMatching.new(obj).instance_eval &b
-    rescue PatternFound => pf
-        pf.return_value
-    else
-      raise PatternNotFound, "Reached end of pattern matching block"
-    end
-  end
-end
-
 class PatternMatching
   def initialize(obj)
     @obj = obj
+  end
+
+  def self.matches?(obj, &b)
+    begin
+      PatternMatching.new(obj).instance_eval &b
+    rescue PatternFound => pf
+      pf.return_value
+    else
+      raise PatternNotFound, "Reached end of pattern matching block"
+    end
   end
 
   def val(a_value)
