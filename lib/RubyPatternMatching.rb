@@ -1,4 +1,8 @@
 class PatternFound < Exception
+  attr_reader :return_value
+  def initialize(return_value)
+    @return_value = return_value
+  end
 end
 
 class PatternNotFound < Exception
@@ -9,11 +13,10 @@ class Object
   # -Hacerlo un metodo de clase de PatternMatching (ver rama no_extra_monkey para esto)
   # -Colocar en un module para que se incluya al nivel que el usuario quiera usarlo
   def matches?(obj, &b)
-    inst_pttrn_mtc = PatternMatching.new obj
     begin
-      inst_pttrn_mtc.instance_eval &b
-    rescue PatternFound
-      inst_pttrn_mtc.ret
+      PatternMatching.new(obj).instance_eval &b
+    rescue PatternFound => pf
+        pf.return_value
     else
       raise PatternNotFound, "Reached end of pattern matching block"
     end
@@ -21,9 +24,6 @@ class Object
 end
 
 class PatternMatching
-
-  attr_reader :ret
-
   def initialize(obj)
     @obj = obj
   end
@@ -37,42 +37,24 @@ class PatternMatching
   end
 
   def duck(*methods)
-    BasicMatcher.new { |obj| methods.all? { |method| obj.methods.include? method} }
+    BasicMatcher.new { |obj| methods.all? { |method| obj.respond_to? method} }
   end
 
-  def list(a_list, match_size = true) #No me deja ponerle el ? a match_size? -- Mati
-    ListMatcher.new a_list, match_size
+  def list(a_list, size_matches = true)
+    ListMatcher.new a_list, size_matches
   end
 
   def with(*matchers, &b)
     if matchers.all? { |matcher| matcher.call @obj }
       matchers.each { |matcher| matcher.do_bindings @obj, self }
-      @ret = self.instance_eval &b
-      raise PatternFound
-
-      # TODO detalle: la excepción puede llevarse datos y de esa manera evitan tener que guardar
-      #   el valor como estado interno del matching
-      #
-      # [11] pry(main)> class C < Exception
-      # [11] pry(main)*   def initialize(counter)
-      # [11] pry(main)*     @counter = counter
-      # [11] pry(main)*   end
-      # [11] pry(main)*   def counter
-      # [11] pry(main)*     @counter
-      # [11] pry(main)*   end
-      # [11] pry(main)* end
-      # [13] pry(main)> begin
-      # [13] pry(main)*   raise C.new(122)
-      # [13] pry(main)* rescue C => ccc
-      # [13] pry(main)*   ccc.counter
-      # [13] pry(main)* end
-      # => 122
+      ret = self.instance_eval &b
+      raise PatternFound.new(ret)
     end
   end
 
   def otherwise(&b)
-    @ret = self.instance_eval &b
-    raise PatternFound
+    ret = self.instance_eval &b
+    raise PatternFound.new(ret)
   end
 end
 
@@ -145,19 +127,18 @@ end
 class ListMatcher
   include Matcher
 
-  def initialize(patterns, matches_size)
+  def initialize(patterns, size_matches)
     @patterns = patterns
-    @matches_size = matches_size
+    @size_matches = size_matches
   end
 
   def call(obj)
-    obj.is_a? Array and (not @matches_size or @patterns.length == obj.length) and self.list_matches? obj
+    obj.is_a? Array and (not @size_matches or @patterns.length == obj.length) and self.list_matches? obj
   end
 
   def do_bindings(list, pttrn_mtc)
-    #Se puede modificar para que zippee los array en lugar de usar un indice
-    @patterns.each_index do |index|
-      @patterns[index].do_bindings(list[index], pttrn_mtc) if @patterns[index].is_a? Matcher
+    @patterns.each_with_index do |pattern, index|
+      pattern.do_bindings(list[index], pttrn_mtc) if pattern.is_a? Matcher
     end
   end
 
