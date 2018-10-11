@@ -327,7 +327,7 @@ describe 'PatternMatching' do
       it 'true when condition is true' do
         result = 0
         PatternMatching.matches?(1) do
-          with(:bind.if { |obj| obj == 1 }) { result = bind }
+          with(:bind.if { true }) { result = bind }
         end
 
         expect(result).to eq 1
@@ -336,11 +336,61 @@ describe 'PatternMatching' do
       it 'false when condition is false' do
         result = 0
         PatternMatching.matches?(1) do
-          with(:bind.if { |obj| obj != 1}) { result = bind }
+          with(:bind.if { false }) { result = bind }
           otherwise { result = 2 }
         end
 
         expect(result).to eq 2
+      end
+
+      it 'allows use of no parameters' do
+        result = 0
+
+        PatternMatching.matches?(1) do
+          with(:bind.if { odd? }) {result = bind}
+        end
+
+        expect(result).to eq 1
+      end
+
+      it 'allows use of one parameter' do
+        result = false
+        PatternMatching.matches?(true) do
+          with(:bind.if { |obj| obj }) {result = bind}
+        end
+
+        expect(result).to be true
+      end
+
+      it 'false if arity == 0 and NameError raised' do
+        result = 0
+
+        PatternMatching.matches?(1) do
+          with(:bind.if { a_method }) {result = bind}
+          otherwise {result = 2}
+        end
+
+        expect(result).to eq 2
+      end
+
+      it 'raise ArgumentError with more than one argument' do
+        p = proc do
+          PatternMatching.matches?(false) do
+            with(:bind.if {|arg1, arg2|}) {}
+          end
+        end
+
+        expect(&p).to raise_error ArgumentError
+      end
+
+      it 'raise NameError if arity == 1 and NameError is raised' do
+        p = proc do
+          PatternMatching.matches?(false) do
+            with(:bind.if {|arg1| arg1.a_method}) {}
+          end
+        end
+
+        expect(&p).to raise_error NameError
       end
     end
   end

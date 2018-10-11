@@ -150,7 +150,23 @@ class IfMatcher
   end
 
   def call(obj)
-    @condition.call(obj)
+
+    arity = @condition.arity
+    begin
+      if(arity == 1)
+        obj.instance_exec obj, &@condition
+      elsif (arity == 0)
+        obj.instance_eval &@condition
+      else
+        raise ArgumentError, "expect 0 or 1, got #{arity}"
+      end
+    rescue NameError => name_error
+      if(arity == 0)
+        false
+      else
+        raise name_error
+      end
+    end
   end
 
   def bind_name
