@@ -153,19 +153,13 @@ class IfMatcher
 
     arity = @condition.arity
     begin
-      if(arity == 1)
-        obj.instance_exec obj, &@condition
-      elsif (arity == 0)
-        obj.instance_eval &@condition
-      else
+      if(arity > 1)
         raise ArgumentError, "expect 0 or 1, got #{arity}"
-      end
-    rescue NameError => name_error
-      if(arity == 0)
-        false
       else
-        raise name_error
+        obj.instance_exec obj, &@condition
       end
+    rescue NameError
+      false
     end
   end
 
