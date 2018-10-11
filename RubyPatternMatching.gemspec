@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.description = %q{An implementation of pattern matching for Ruby language }
   s.email = %q{mszlajen@est.frba.utn.edu.ar}
   s.files = ["lib/RubyPatternMatching.rb"]
-  s.test_files = ["spec/test_spec.rb"]
+  s.test_files = ['spec/matchers_tests/test_spec.rb,' 'spec/methods_tests/test_spec.rb']
   #s.homepage = %q{http://rubygems.org/gems/hola}
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.6.2}
