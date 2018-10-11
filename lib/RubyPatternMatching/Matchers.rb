@@ -14,7 +14,7 @@ module Matcher
   end
 end
 
-class ComplexMatcher
+module ComplexMatcher
   include Matcher
 
   def initialize(children)
@@ -26,7 +26,18 @@ class ComplexMatcher
   end
 end
 
-class AndMatcher < ComplexMatcher
+
+module BindingMatcher
+  include Matcher
+
+  def do_bindings(obj, pttrn_mtc)
+    pttrn_mtc.define_singleton_method(bind_name) { obj }
+  end
+end
+
+class AndMatcher
+  include ComplexMatcher
+
   def call(obj)
     @children.all? { |child| child.call(obj) }
   end
@@ -36,7 +47,9 @@ class AndMatcher < ComplexMatcher
   end
 end
 
-class OrMatcher < ComplexMatcher
+class OrMatcher
+  include ComplexMatcher
+
   def call(obj)
     @children.any? { |child| child.call(obj) }
   end
@@ -111,30 +124,20 @@ class BasicMatcher
   end
 end
 
-module BindingMatcher
-  include Matcher
-  def call(obj)
-    call_condition(obj)
-  end
-
-  def do_bindings(obj, pttrn_mtc)
-    pttrn_mtc.define_singleton_method(name) { obj }
-  end
-end
 
 class Symbol
   include BindingMatcher
 
-  def call_condition(_obj)
+  def call(_obj)
     true
   end
 
-  def name
+  def bind_name
     self
   end
 
   def if (&condition)
-    new IfMatcher(self, &condition)
+    IfMatcher.new(self, &condition)
   end
 end
 
@@ -146,11 +149,11 @@ class IfMatcher
     @condition = condition
   end
 
-  def call_condition(obj)
+  def call(obj)
     @condition.call(obj)
   end
 
-  def name
+  def bind_name
     @name
   end
 end

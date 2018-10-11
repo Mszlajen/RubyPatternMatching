@@ -322,5 +322,26 @@ describe 'PatternMatching' do
         expect(resultado).to eq 4
       end
     end
+
+    describe 'if matcher' do
+      it 'true when condition is true' do
+        result = 0
+        PatternMatching.matches?(1) do
+          with(:bind.if { |obj| obj == 1 }) { result = bind }
+        end
+
+        expect(result).to eq 1
+      end
+
+      it 'false when condition is false' do
+        result = 0
+        PatternMatching.matches?(1) do
+          with(:bind.if { |obj| obj != 1}) { result = bind }
+          otherwise { result = 2 }
+        end
+
+        expect(result).to eq 2
+      end
+    end
   end
 end
