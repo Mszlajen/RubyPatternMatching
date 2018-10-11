@@ -10,20 +10,38 @@ end
 class PatternNotFound < Exception
 end
 
+class Object
+
+  def self.define_pttrn_mtc_method(method_name, &block)
+    self.define_method(method_name) do |obj|
+      begin
+        PatternMatching.new(obj).instance_eval &block
+      rescue PatternFound => pf
+        pf.return_value
+      else
+        raise PatternNotFound, "Reached end of pattern matching block"
+      end
+    end
+  end
+
+end
+
 class PatternMatching
   def initialize(obj)
     @obj = obj
   end
 
-  def self.matches?(obj, &b)
+  def self.matches? (obj, &block)
     begin
-      PatternMatching.new(obj).instance_eval &b
+      PatternMatching.new(obj).instance_eval &block
     rescue PatternFound => pf
       pf.return_value
     else
       raise PatternNotFound, "Reached end of pattern matching block"
     end
   end
+
+  singleton_class.alias_method :call, :matches?
 
   def val(a_value)
     BasicMatcher.new { |obj| obj == a_value}
